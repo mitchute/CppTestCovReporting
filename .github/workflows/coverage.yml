@@ -1,0 +1,83 @@
+name: Coverage
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build g++ gcovr
+
+      - name: Configure (coverage)
+        run: |
+          cmake -S . -B build-coverage -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_FLAGS="--coverage -O0 -g" \
+            -DCMAKE_C_FLAGS="--coverage -O0 -g" \
+            -DCMAKE_EXE_LINKER_FLAGS="--coverage" \
+            -DCMAKE_SHARED_LINKER_FLAGS="--coverage"
+
+      - name: Build
+        run: cmake --build build-coverage -j
+
+      # No tests in this project; execute the program to produce coverage data.
+      - name: Run (to collect coverage)
+        run: |
+          ./build-coverage/hello
+
+      - name: Generate coverage (HTML + XML)
+        run: |
+          mkdir -p coverage
+          gcovr -r . build-coverage \
+            --exclude '.*(test|tests|third_party|external)/.*' \
+            --html --html-details -o coverage/index.html \
+            --xml -o coverage/coverage.xml \
+            --print-summary
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: coverage/
+
+      # Publish to GitHub Pages only for pushes to main
+      - name: Setup Pages
+        if: github.event_name == 'push'
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        if: github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: coverage/
+
+  deploy:
+    if: github.event_name == 'push'
+    needs: coverage
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
