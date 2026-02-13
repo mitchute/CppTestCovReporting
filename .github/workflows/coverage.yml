@@ -2,7 +2,7 @@ name: Coverage
 
 on:
   push:
-    branches: [ main ]
+    branches: [ '*' ]
   pull_request:
 
 permissions:
@@ -58,19 +58,19 @@ jobs:
           name: coverage-html
           path: coverage/
 
-      # Publish to GitHub Pages only for pushes to main
+      # Publish to GitHub Pages only for pushes to the default branch
       - name: Setup Pages
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
         uses: actions/upload-pages-artifact@v3
         with:
           path: coverage/
 
   deploy:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
     needs: coverage
     runs-on: ubuntu-latest
     environment:
