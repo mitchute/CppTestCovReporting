@@ -45,11 +45,11 @@ jobs:
 
           gcovr \
             --root . \
-            --object-directory build-coverage \
-            --filter 'src/.*' \
+            build-coverage \
+            --filter "${PWD}/src" \
             --exclude '.*(test|tests|third_party|external)/.*' \
-            --html --html-details -o coverage/index.html \
-            --xml -o coverage/coverage.xml \
+            --html-details coverage/index.html \
+            --xml coverage/coverage.xml \
             --print-summary
 
       - name: nojekyll marker
