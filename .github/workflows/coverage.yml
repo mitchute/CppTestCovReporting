@@ -40,10 +40,16 @@ jobs:
       - name: Generate coverage (HTML + XML)
         run: |
           mkdir -p coverage
-          gcovr -r . build-coverage \
+          echo "Coverage data files found:"
+          find build-coverage -type f \( -name '*.gcda' -o -name '*.gcno' \) -print
+
+          gcovr \
+            --root . \
+            build-coverage \
+            --filter "${PWD}/src" \
             --exclude '.*(test|tests|third_party|external)/.*' \
-            --html --html-details -o coverage/index.html \
-            --xml -o coverage/coverage.xml \
+            --html-details coverage/index.html \
+            --xml coverage/coverage.xml \
             --print-summary
 
       - name: nojekyll marker
