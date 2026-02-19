@@ -3,19 +3,21 @@ name: Coverage
 on:
   push:
     branches:
-      - main
+      - "**"
   pull_request:
+  workflow_dispatch:
 
 jobs:
   coverage:
     runs-on: ubuntu-latest
     env:
       BUILD_DIR: build
-      COVERAGE_IO_UPLOAD_URL: https://coverage.io/api/v1/coverage
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install dependencies
         run: |
@@ -26,8 +28,10 @@ jobs:
         run: |
           cmake -S . -B "$BUILD_DIR" -G Ninja \
             -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_FLAGS="--coverage" \
             -DCMAKE_CXX_FLAGS="--coverage" \
-            -DCMAKE_EXE_LINKER_FLAGS="--coverage"
+            -DCMAKE_EXE_LINKER_FLAGS="--coverage" \
+            -DCMAKE_SHARED_LINKER_FLAGS="--coverage"
 
       - name: Build
         run: cmake --build "$BUILD_DIR"
@@ -35,16 +39,17 @@ jobs:
       - name: Run executable
         run: "$BUILD_DIR/hello"
 
-      - name: Generate coverage report
+      - name: Generate coverage report (Cobertura XML + HTML)
         run: |
           gcovr \
             --root . \
-            --filter "src" \
+            --filter "src/.*" \
             --object-directory "$BUILD_DIR" \
-            --gcov-exclude-directories "$BUILD_DIR/CMakeFiles" \
+            --gcov-exclude-directories "$BUILD_DIR/.*" \
             --xml-pretty \
             --output coverage.xml \
-            --html-details coverage.html
+            --html-details \
+            --output coverage.html
 
       - name: Upload coverage report artifact
         uses: actions/upload-artifact@v4
@@ -54,11 +59,9 @@ jobs:
             coverage.xml
             coverage.html
 
-      - name: Upload to coverage.io
-        env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-        run: |
-          curl --fail --show-error --location \
-            --header "Authorization: Bearer ${COVERALLS_REPO_TOKEN}" \
-            --form "coverage=@coverage.xml" \
-            "$COVERAGE_IO_UPLOAD_URL"
+      - name: Upload to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ github.token }}
+          file: coverage.xml
+          format: cobertura
