@@ -39,17 +39,15 @@ jobs:
       - name: Run executable
         run: "$BUILD_DIR/hello"
 
-      - name: Generate coverage report (Cobertura XML + HTML)
+      - name: Generate coverage XML (Cobertura)
         run: |
           gcovr \
             --root . \
             --filter "src/.*" \
             --object-directory "$BUILD_DIR" \
             --gcov-exclude-directories "$BUILD_DIR/.*" \
-            --xml-pretty \
-            --output coverage.xml \
-            --html-details \
-            --output coverage.html
+            --cobertura-pretty \
+            --output coverage.xml
 
       - name: Upload coverage report artifact
         uses: actions/upload-artifact@v4
@@ -58,6 +56,11 @@ jobs:
           path: |
             coverage.xml
             coverage.html
+
+      - name: Verify coverage files exist
+        run: |
+          ls -la
+          test -f coverage.xml
 
       - name: Upload to Coveralls
         uses: coverallsapp/github-action@v2
