@@ -39,7 +39,9 @@ jobs:
         run: |
           gcovr \
             --root . \
+            --filter "src" \
             --object-directory "$BUILD_DIR" \
+            --gcov-exclude-directories "$BUILD_DIR/CMakeFiles" \
             --xml-pretty \
             --output coverage.xml \
             --html-details coverage.html
