@@ -56,9 +56,9 @@ jobs:
 
       - name: Upload to coverage.io
         env:
-          COVERAGE_IO_TOKEN: ${{ secrets.COVERAGE_IO_TOKEN }}
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
         run: |
           curl --fail --show-error --location \
-            --header "Authorization: Bearer ${COVERAGE_IO_TOKEN}" \
+            --header "Authorization: Bearer ${COVERALLS_REPO_TOKEN}" \
             --form "coverage=@coverage.xml" \
             "$COVERAGE_IO_UPLOAD_URL"
